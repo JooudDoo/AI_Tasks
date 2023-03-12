@@ -2,3 +2,4 @@ venv/
 01_Task/dataset/
 log*
 __pycache__
+worker.py
