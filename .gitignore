@@ -3,3 +3,4 @@ venv/
 log*
 __pycache__
 worker.py
+runs/
