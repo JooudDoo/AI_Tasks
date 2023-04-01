@@ -1,7 +1,8 @@
 venv/
-01_Task/dataset/
+dataset*
 log*
 __pycache__
 worker.py
 runs/
 AIenv/
+TB_cache/
