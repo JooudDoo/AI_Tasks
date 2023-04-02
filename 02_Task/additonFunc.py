@@ -1,5 +1,7 @@
 import os
 
+import numpy as np
+
 import matplotlib
 import matplotlib.pyplot as plt
 
@@ -17,9 +19,10 @@ def create_image_plot(row_len : int = None, **images):
     n_images = len(images)
     if row_len is None:
         row_len = n_images
-    fig = plt.figure(figsize=(20, 10))
+    fig = plt.figure(figsize=(16, 6))
     for idx, (name, image) in enumerate(images.items()):
         ax = fig.add_subplot(idx//row_len+1, n_images, idx+1)
         ax.set_title(name.title(), fontsize=16)
+        image = np.clip(image.astype(np.float32), 0, 1)
         ax.imshow(image)
     return fig
