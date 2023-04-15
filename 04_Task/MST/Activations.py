@@ -1,7 +1,9 @@
 
 import numpy as np
 
-from .BasicModule import BasicModule
+from .BasicModules import BasicModule
+
+from .Addition.Functions import sigmoid
 
 class SoftMax(BasicModule):
     #!TODO
@@ -27,19 +29,16 @@ class SoftMax(BasicModule):
 class Sigmoid(BasicModule):
     def __init__(self):
         super().__init__()
-
-    def _sig(self, x):
-        return 1 / (1 + np.exp(-x))
     
     def forward(self, x):
         self._inX = x
 
-        self._outX = self._sig(x)
+        self._outX = sigmoid(x)
         return self._outX
 
     def backward(self, dOut=None):
         # df/dinX = dOut * dsig/din
-        return dOut * (self._sig(self._outX)*(1 - self._sig(self._outX)))
+        return dOut * (sigmoid(self._outX)*(1 - sigmoid(self._outX)))
 
 class Relu(BasicModule):
     def __init__(self):

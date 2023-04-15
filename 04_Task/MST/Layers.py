@@ -1,6 +1,6 @@
 import numpy as np
 
-from .BasicModule import BasicModule
+from .BasicModules import BasicModule
 
 from .Addition.Functions import default_random_normal_dist__
 

@@ -1,6 +1,6 @@
 import numpy as np
 
-from .BasicModule import BasicModule
+from .BasicModules import BasicModule
 
 class CrossEntropyLoss(BasicModule):
     #!REDO
