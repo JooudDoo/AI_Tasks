@@ -58,6 +58,9 @@ class BasicModule:
     def backward(self, dOut = None):
         raise NotImplementedError(f"[{type(self).__name__}] is missing the required \"backward\" function")
     
+    def isTrainable(self):
+        return self._w is not None or self._bias is not None
+
     def __stringify(self, module, result_string = None, depth=0):
         #!TODO get module information from module
         if result_string is None:
@@ -71,7 +74,7 @@ class BasicModule:
             raise RuntimeError(f"It is not possible to pull information from {module}")
 
         for moduleName, module in _extract_plc.items():
-            result_string += '\t' * depth
+            result_string += '\t' * (depth-1) + ' └── '
 
             # Достаем имя модуля
             if "__seq_layer_" in moduleName:
@@ -84,7 +87,7 @@ class BasicModule:
             
             # Достаем информацию о модуле
             if isinstance(module, BasicModule):
-                result_string += f"module_information"
+                result_string += f"Trainable({module.isTrainable()})"
             else: # Если обьект не модуль, вызываем от него функцию рекурсивно
                 result_string += f"\n{self.__stringify(module, depth=depth+1)}"
             result_string += "\n"
@@ -93,7 +96,7 @@ class BasicModule:
 
     def __str__(self):
         result_string = f"{self.__class__.__name__}:\n"
-        return result_string + self.__stringify(self, depth=1)
+        return result_string + self.__stringify(self, depth=1).strip()
 
 
 class Sequential(BasicModule):

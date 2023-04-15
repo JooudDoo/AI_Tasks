@@ -1,4 +1,6 @@
 
+import numpy as np
+
 from .BasicModules import BasicModule
 
 class SGD:
@@ -10,14 +12,26 @@ class SGD:
         '_bias': '_dbias',
     }
 
-    def __init__(self, module : BasicModule , lr : float):
+    def __init__(self, module : BasicModule , lr : float, momentum : float = 0):
         self.modules : list[BasicModule] = self.__generate_modules_list(module)
         self.lr = lr
+        self.momentum = momentum
+        self.__create_modules_momentum_params()
+
+    def __create_modules_momentum_params(self):
+        for id, module in enumerate(self.modules):
+            if self.momentum == 0: # Если моментум не задан, то не выделяем место под сохранение velocity
+                self.modules[id] = (None, module)
+            else:
+                velocity_params = {}
+                for attribute, _ in self._target_attributes.items():
+                    if module.get_by_name(attribute) is not None: # Проверяем есть ли параметр из целевых для оптимизации в слое
+                        velocity_params.update({attribute: np.zeros_like(module.get_by_name(attribute))})
+                self.modules[id] = (velocity_params, module)
 
     def __generate_modules_list(self, module, modules_d : list[BasicModule] = None):
         """
-            Extracting all modules inside main module
-            Return: list of all modules
+            Вытягиваем все обучаемые под модули модуля
         """
         if modules_d is None:
             modules_d = []
@@ -33,21 +47,27 @@ class SGD:
             if isinstance(sub_module, dict):
                 modules_d = self.__generate_modules_list(sub_module, modules_d)
             else:
-                modules_d.append(sub_module)
+                if sub_module.isTrainable(): # Проверяем является ли модуль обучаемым
+                    modules_d.append(sub_module)
         return modules_d
 
-    def _apply_optimization(self, w, dW): # sgd formula
+    def _apply_optimization(self, module : BasicModule, attribute : str, params : dict[str, np.ndarray]): # sgd formula
         """
-            w_(t+1) = w_(t) - lr * grad{ w_(t) }
+            v_(t+1) = momentum * v_(t) + grad { w_(t) }
+            w_(t+1) = w_(t) - lr *v_(t+1)
         """
-        return w - self.lr * dW
+        if params is not None:
+            params[attribute] = self.momentum * params[attribute] + module.get_by_name(self._target_attributes[attribute])
+            velocity = params[attribute]
+        else:
+            velocity = module.get_by_name(self._target_attributes[attribute]) # Если моментум не используется то velocity = grad
+        return module.get_by_name(attribute) - self.lr * velocity
 
     def step(self):
-        for module in self.modules:
+        for (params, module) in self.modules:
             for attribute, derivation in self._target_attributes.items():
-                if module.get_by_name(attribute) is not None: #Optimize weights
-                    if module.get_by_name(derivation) is not None:
-                        new_w = self._apply_optimization(module.get_by_name(attribute), module.get_by_name(derivation))
-                        module.set_by_name(attribute, new_w)
-                    else:
-                        raise RuntimeError(f"It is necessary to backward first to perform optimization")
+                if module.get_by_name(derivation) is not None:
+                    new_w = self._apply_optimization(module, attribute, params)
+                    module.set_by_name(attribute, new_w)
+                else:
+                    raise RuntimeError(f"It is necessary to backward first to perform optimization")

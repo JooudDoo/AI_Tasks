@@ -16,8 +16,8 @@ class SoftMax(BasicModule):
         """
             Вычисляем максимум по батчу для стабильности вычисления
         """
-        x_batch_max = np.max(x, axis=1, keepdims=True)
-        x_exp = np.exp(x - x_batch_max)
+        self._x_batch_max = np.max(x, axis=1, keepdims=True)
+        x_exp = np.exp(x - self._x_batch_max)
         self._outX = x_exp / np.sum(x_exp, axis=1, keepdims=True)
         return self._outX
 
@@ -31,14 +31,15 @@ class Sigmoid(BasicModule):
         super().__init__()
     
     def forward(self, x):
-        self._inX = x
+        self._inX = np.clip(x, -600, 600) # Используем clip для предотвращения переполнения экспоненты
 
-        self._outX = sigmoid(x)
+        self._outX = sigmoid(self._inX)
         return self._outX
 
     def backward(self, dOut=None):
+        #!REDO разобраться с производной сигмоиды
         # df/dinX = dOut * dsig/din
-        return dOut * (sigmoid(self._outX)*(1 - sigmoid(self._outX)))
+        return dOut * (self._outX*(1 - self._outX))
 
 class Relu(BasicModule):
     def __init__(self):
