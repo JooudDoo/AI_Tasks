@@ -24,10 +24,7 @@ class FullyConnectedLayer(BasicModule):
         self._outX = np.dot(x, self._w) + np.tile(self._bias, (x.shape[0], 1))
         return self._outX # .shape() = [batch_size, out_size]
 
-    def backward(self, dOut = None):
-        if dOut is None:
-            return np.ones_like(self._inX)
-        
+    def backward(self, dOut = None):        
         """
             Берем производную весов, по производной выхода. Т.е. dOut/dW
             inX.T.shape = (in_size, batch_size)
