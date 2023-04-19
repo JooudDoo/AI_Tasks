@@ -1,6 +1,9 @@
 import os
+from os.path import join as pjoin
+import contextlib
 import sys
 
+import cv2
 import numpy as np
 
 import matplotlib
@@ -24,5 +27,18 @@ def create_image_plot(row_len : int = None, **images):
     for idx, (name, image) in enumerate(images.items()):
         ax = fig.add_subplot(idx//row_len+1, n_images, idx+1)
         ax.set_title(name.title(), fontsize=16)
-        ax.imshow(image)
+        with open("/dev/null", 'w') as dummy_f:
+            with contextlib.redirect_stderr(dummy_f):
+                ax.imshow(image)
     return fig
+
+def save_imgs(path = None, name = "imgs", **images):
+    if(path is None):
+        raise AttributeError(f"You shoud write path")
+    if not os.path.exists(path):
+        os.makedirs(path)
+    image_path = pjoin(path, f"{name}")
+    fig = create_image_plot(**images)
+    fig.savefig(image_path)
+    fig.clear()
+    plt.close(fig)
