@@ -12,11 +12,13 @@ def extract_filename(filepath : str):
 
 DATASET_DIR = 'dataset/tiff'
 
-TARGET_DIRS = [('train', 'train_labels'), ('test', 'test_labels'), ('val', 'val_labels')]
+TARGET_DIRS = [('train', 'train_labels')]#, ('test', 'test_labels'), ('val', 'val_labels')]
 
 THRESHOLD = 0.4
 
-REMOVE_MODE = "FIX_MASKS_COPY" # "DEL" | "COPY_DEL" | "FIX_MASKS" | "COPY"
+REMOVE_MODE = "DEL" # "DEL" | "COPY_DEL" | "FIX_MASKS" | "COPY"
+
+COPY_FOLDER_SUFFIX = "_bads"
 
 print(f"Начата очистка: {DATASET_DIR}")
 print(f"Будут осмотрены папки внутри основной директории: {TARGET_DIRS}")
@@ -40,8 +42,8 @@ for id, target in enumerate(TARGET_DIRS):
             broken_pair_count += 1
 
             if("COPY" in REMOVE_MODE):
-                origin_copy_folder = pjoin(DATASET_DIR, f"{target[0]}_to_remove")
-                mask_copy_folder = pjoin(DATASET_DIR, f"{target[1]}_to_remove")
+                origin_copy_folder = pjoin(DATASET_DIR, f"{target[0]}{COPY_FOLDER_SUFFIX}")
+                mask_copy_folder = pjoin(DATASET_DIR, f"{target[1]}{COPY_FOLDER_SUFFIX}")
 
                 if not os.path.exists(origin_copy_folder):
                     os.makedirs(origin_copy_folder)

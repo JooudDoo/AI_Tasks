@@ -17,7 +17,8 @@ def calculate_padding(orig, pad):
 
 DATASET_DIR = 'dataset/tiff'
 
-TARGET_DIRS = [('test', 'test_labels'), ('val', 'val_labels')]
+# TARGET_DIRS = [('test', 'test_labels'), ('val', 'val_labels')]
+TARGET_DIRS = [('train', 'train_labels')]
 
 CROP_SIZE = (256,256)
 PAD_SIZE  = (1536, 1536)
