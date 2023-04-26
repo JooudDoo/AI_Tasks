@@ -5,6 +5,21 @@ import numpy as np
 def default_random_normal_dist__(size : tuple):
     return np.random.normal(loc=0, scale=1, size = size)
     
+def relu_weight_init__(size : tuple):
+    """
+        Нулевое среднее
+        Но дисперсия должна быть с учетом размера входных параметров
+    """
+    outS = size[1] # выходной размер после применения весов
+    inS = size[0] # входной размер весов
+    receptive = 1
+    if(len(size) > 2):
+        for d in size[2:]:
+            receptive *= d
+    disp = np.sqrt(2/(outS*receptive))
+    return np.random.normal(loc=0, scale=disp, size=size)
+
+
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 

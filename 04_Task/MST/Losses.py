@@ -13,6 +13,7 @@ class CrossEntropyLoss(BasicModule):
         Также при необходимости переводит origin к one_hot encoded вектору
     """
     #!REDO
+    # Скорее всего нужно делать другую инициализацию весов
     # Некорректная работа с функцией активации ReLU
     # Приходят слишком большие значение на вход или одни нули
     # В итоге после софтмакс получаем что градиенты назада тякут вяло
@@ -37,10 +38,11 @@ class CrossEntropyLoss(BasicModule):
             Применяем softMax чтобы привести входы к вектору вероятностей
             Добавляем очень маленькое число для стабильности
         """
+        # self._smOut = None
         self._smOut = softMax(x) + 1e-9
         # print("\nF:", x, "\n", self._smOut, "\n", self._origin, "\n\n")
-        
-        self._outX = -np.sum(self._origin * np.log(self._inX)) / self._batch_size
+
+        self._outX = -np.sum(self._origin * np.log(self._smOut)) / self._batch_size
         return self._outX
 
     def backward(self, dOut = None):
@@ -77,6 +79,6 @@ class CrossEntropyLoss(BasicModule):
                     = -y + S(t)
         """
         if dOut is None:
-            return (self._inX - self._origin) / self._batch_size
+            return (self._smOut - self._origin) / self._batch_size
         else:
             raise ValueError("TODO text for error")

@@ -4,7 +4,6 @@ import numpy as np
 from .BasicModules import BasicModule
 
 class SGD:
-    #!TODO
     #!TODO with momentum
 
     _target_attributes = {
@@ -65,9 +64,12 @@ class SGD:
 
     def step(self):
         for (params, module) in self.modules:
+            bad_params = 0 # if all params of layer dont have any derivations
             for attribute, derivation in self._target_attributes.items():
                 if module.get_by_name(derivation) is not None:
                     new_w = self._apply_optimization(module, attribute, params)
                     module.set_by_name(attribute, new_w)
                 else:
-                    raise RuntimeError(f"It is necessary to backward first to perform optimization")
+                    bad_params += 1
+                    if bad_params == len(self._target_attributes.items()):
+                        raise RuntimeError(f"It is necessary to backward first to perform optimization")

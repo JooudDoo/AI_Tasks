@@ -2,7 +2,7 @@ import numpy as np
 
 from .BasicModules import BasicModule
 
-from .Addition.Functions import default_random_normal_dist__
+from .Addition.Functions import default_random_normal_dist__, relu_weight_init__
 
 class FullyConnectedLayer(BasicModule):
 
@@ -10,8 +10,9 @@ class FullyConnectedLayer(BasicModule):
         super().__init__()
 
         self._inX = None
-        self._w = default_random_normal_dist__(size=(in_size, out_size))
-        self._bias = default_random_normal_dist__(size=(1, out_size)) if use_bias else np.zeros(shape=out_size)
+        self._use_bias = use_bias
+        self._w = relu_weight_init__(size=(in_size, out_size))
+        self._bias = relu_weight_init__(size=(1, out_size)) if use_bias else np.zeros(shape=(1, out_size))
 
     def forward(self, x):
         self._inX = x # .shape() = [batch_size, in_size]
@@ -75,7 +76,8 @@ class FullyConnectedLayer(BasicModule):
             То тогда производная вокруг bias будет просто суммой значений производных df/da 
             (где a - текущий шаг, а f - то для чего мы считаем производную [затравка для начала расчета производной (loss - не совсем корректно)])
         """
-        self._dbias = np.sum(dOut, axis=0, keepdims=True)
+        if self._use_bias:
+            self._dbias = np.sum(dOut, axis=0, keepdims=True)
 
         """
             Производная по входным будет считаться аналогично производной для весов
@@ -83,3 +85,72 @@ class FullyConnectedLayer(BasicModule):
         """
         self._dinX = np.dot(dOut, self._w.T)
         return self._dinX
+
+
+class Conv2d(BasicModule):
+
+    def __init__(self, inC : int, outC : int, kernel_size, stride = 1, padding = 0, dilation = 1, groups = 1, use_bias = True, padding_value : float = 0):
+        super().__init__()
+        self._inC = inC
+        self._outC = outC
+
+        self._kernel_size = kernel_size if isinstance(kernel_size, tuple) else (kernel_size, kernel_size)
+
+        self._padding = padding if isinstance(padding, tuple) else (padding, padding)
+        self._padding_value = padding_value
+
+        self._stride = stride
+        
+        self._groups = groups
+        self._dilation = dilation
+
+        self._use_bias = use_bias
+
+        self.__init_weights()
+
+    def __init_weights(self):
+        self._w = default_random_normal_dist__((self._outC, self._inC // self._groups, *self._kernel_size))
+        self._b = default_random_normal_dist__(size=(1, self._outC, 1, 1)) if self._use_bias else np.zeros(shape=(1, self._outC, 1, 1))
+
+    def _calculate_output_sizes(self, inH : int, inW : int):
+        """
+            Вычисляет итоговый размер по обоим измерениям
+        """
+        outH = self.__calculate_output_dim_size(inH, 0)
+        outW = self.__calculate_output_dim_size(inW, 1)
+        return outH, outW
+    
+    def __calculate_output_dim_size(self, inSize : int, sizeType : int):
+        """
+            Вычисляет итоговый размер после свертки по измерению 
+        """
+        outSize = inSize
+        outSize += self._padding[sizeType] # Add padding addition size
+        outSize -= self._dilation*(self._kernel_size[sizeType]-1)-1
+        outSize //= self._stride
+        return outSize
+
+    def forward(self, x):
+        BS, C, H, W = x.shape
+
+        outH, outW = self._calculate_output_sizes(H, W) #Вычисляем размер изо после свертки
+
+        self._inX = np.pad(x, self._padding, mode='constant', constant_values=self._padding_value) # Добавляем к входному изо паддинг
+
+        convResult = np.zeros((BS, self._outC, outH, outW))
+        for channel in range(self._inC):
+            for v_shift in range(0, H - self._kernel_size[1], self._stride):
+                for h_shift in range(0, W - self._kernel_size[0], self._stride):
+                    convResult[:, channel, v_shift, h_shift] = np.sum(
+                        self._inX[:, channel, v_shift:v_shift+self._kernel_size[1], h_shift:h_shift+self._kernel_size[0]] * self._w
+                    )
+        
+        return convResult
+
+    def backward(self, dOut=None):
+        return self._dinX
+
+if __name__ == '__main__':
+    c = Conv2d(3, 9, 3, padding=1)
+
+    
