@@ -1,9 +1,13 @@
 
+from .MDT import MDT_REFACTOR_ARRAY, MDT_ARRAY
+
 class BasicModule:
 
     def __init__(self):
         self._modules : dict = {}
         self._parameters : list = []
+
+        self.__zero_auto_backward_state()
 
         self._w = None
         self._bias = None
@@ -48,20 +52,67 @@ class BasicModule:
         if len(self._modules) != 0:
             return self._modules
         return None
+    
+    def __zero_auto_backward_state(self):
+        self._hid_inX = None
+        self._hid_outX = None
+
+    def _auto_backward_state(self):
+        return self._hid_inX is not None
 
     def __call__(self, *args, **kwds):
-        return self.forward(*args, **kwds)
+        """
+            Обработчик прямого прохода
+        """
+        self.__zero_auto_backward_state()
+        for arg in args:
+            if isinstance(arg, MDT_REFACTOR_ARRAY):
+                if self._hid_inX is None:
+                    self._hid_inX = [arg]
+                else:
+                    self._hid_inX.append(arg)
+        self._hid_outX = self.forward(*args, **kwds)
+        if self._hid_outX._source is None:
+            self._hid_outX._source = self
+        return self._hid_outX
 
     def forward(self):
         raise NotImplementedError(f"[{type(self).__name__}] is missing the required \"forward\" function")
 
     def backward(self, dOut = None):
-        raise NotImplementedError(f"[{type(self).__name__}] is missing the required \"backward\" function")
+        if self.backward_impl is not None:
+            return self.backward_impl(dOut)
+        raise NotImplementedError(f"[{type(self).__name__}] is missing the required \"backward_impl\" function")
     
+    backward_impl = None
+
+    def _auto_backward(self, dOut = None):
+        """
+            Если у нас есть `скрытые` выходные параметры => был произведен прямой проход => можно делать обратный
+
+            Тогда проверяем есть ли у нашего модуля функция backprop
+                - Если есть, обновляем градиенты с помощью нее
+                - Если нет, ничего не делаем с градиентом
+
+            Отправляем градиент всем модулям, которые являлись источниками данных для входа
+
+            В конце зануляем состояния для проходов
+        """
+        if self._hid_outX is not None:
+            if self.backward_impl is not None:
+                dOut = self.backward_impl(dOut)
+            for inArg in self._hid_inX:
+                if inArg._source is not None:
+                    inArg._source._auto_backward(dOut)
+
+            self.__zero_auto_backward_state()
+        else:
+            raise RuntimeError(f"You should make forward pass before auto-backward on {self.__class__.__name__}")
+
     def isTrainable(self):
         return self._w is not None or self._bias is not None
 
-    def __stringify(self, module, result_string = None, depth=0):
+    def __stringify(self, module, result_string = None, depth=1):
         #!TODO get module information from module
         if result_string is None:
             result_string = ""
@@ -96,12 +147,12 @@ class BasicModule:
 
     def __str__(self):
         result_string = f"{self.__class__.__name__}:\n"
-        return result_string + self.__stringify(self, depth=1).strip()
+        return result_string + self.__stringify(self)
 
 
 class Sequential(BasicModule):
     """
-        Класс для создания блоков с линейным проходов по всем его внутренним блокам
+        Класс для создания блоков с линейным проходом по всем его внутренним блокам
     """
 
     def __init__(self, *args : list[BasicModule]):
@@ -113,9 +164,3 @@ class Sequential(BasicModule):
         for module in self.get_modules().values():
             x = module(x)
         return x
-    
-    def backward(self, dOut=None):
-        dN = dOut
-        for module in list(self.get_modules().values())[::-1]:
-            dN = module.backward(dN)
-        return dN

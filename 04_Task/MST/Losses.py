@@ -1,6 +1,7 @@
 import numpy as np
 
 from .BasicModules import BasicModule
+from .MDT import MDT_REFACTOR_ARRAY
 
 from .Addition.Functions import softMax
 
@@ -22,7 +23,7 @@ class CrossEntropyLoss(BasicModule):
     def __init__(self):
         super().__init__()
 
-    def forward(self, x, origin):
+    def forward(self, x, origin) -> MDT_REFACTOR_ARRAY:
         self._inX = x
         self._batch_size = x.shape[0]
 
@@ -45,7 +46,7 @@ class CrossEntropyLoss(BasicModule):
         self._outX = -np.sum(self._origin * np.log(self._smOut)) / self._batch_size
         return self._outX
 
-    def backward(self, dOut = None):
+    def backward_impl(self, dOut = None):
         """
             Вычисление градиента по CE в итоге будет разницей между softMax(inX) и y_gt
             Это можно получить из:
@@ -79,6 +80,10 @@ class CrossEntropyLoss(BasicModule):
                     = -y + S(t)
         """
         if dOut is None:
-            return (self._smOut - self._origin) / self._batch_size
+            dLoss = (self._smOut - self._origin) / self._batch_size
+            if self._hid_inX is not None:
+                for inX in self._hid_inX:
+                    if inX._source is not None:
+                        inX._source._auto_backward(dLoss)
         else:
             raise ValueError("TODO text for error")

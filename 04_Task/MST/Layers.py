@@ -1,8 +1,9 @@
 import numpy as np
 
 from .BasicModules import BasicModule
+from .MDT import MDT_REFACTOR_ARRAY
 
-from .Addition.Functions import default_random_normal_dist__, relu_weight_init__
+from .Addition.Functions import default_random_normal_dist__, ReLU_weight_init__
 
 class FullyConnectedLayer(BasicModule):
 
@@ -11,10 +12,10 @@ class FullyConnectedLayer(BasicModule):
 
         self._inX = None
         self._use_bias = use_bias
-        self._w = relu_weight_init__(size=(in_size, out_size))
-        self._bias = relu_weight_init__(size=(1, out_size)) if use_bias else np.zeros(shape=(1, out_size))
+        self._w = ReLU_weight_init__(size=(in_size, out_size))
+        self._bias = ReLU_weight_init__(size=(1, out_size)) if use_bias else np.zeros(shape=(1, out_size))
 
-    def forward(self, x):
+    def forward(self, x) -> MDT_REFACTOR_ARRAY:
         self._inX = x # .shape() = [batch_size, in_size]
 
         """
@@ -25,7 +26,7 @@ class FullyConnectedLayer(BasicModule):
         self._outX = np.dot(x, self._w) + np.tile(self._bias, (x.shape[0], 1))
         return self._outX # .shape() = [batch_size, out_size]
 
-    def backward(self, dOut = None):        
+    def backward_impl(self, dOut = None):        
         """
             Берем производную весов, по производной выхода. Т.е. dOut/dW
             inX.T.shape = (in_size, batch_size)
@@ -120,23 +121,24 @@ class Conv2d(BasicModule):
         outW = self.__calculate_output_dim_size(inW, 1)
         return outH, outW
     
-    def __calculate_output_dim_size(self, inSize : int, sizeType : int):
+    def __calculate_output_dim_size(self, inSize : int, dim : int):
         """
             Вычисляет итоговый размер после свертки по измерению 
         """
         outSize = inSize
-        outSize += self._padding[sizeType] # Add padding addition size
-        outSize -= self._dilation*(self._kernel_size[sizeType]-1)-1
+        outSize += self._padding[dim] # Add padding addition size
+        outSize -= self._dilation*(self._kernel_size[dim]-1)-1
         outSize //= self._stride
         return outSize
 
     def forward(self, x):
         BS, C, H, W = x.shape
 
-        outH, outW = self._calculate_output_sizes(H, W) #Вычисляем размер изо после свертки
+        outH, outW = self._calculate_output_sizes(H, W) # Вычисляем размер изо после свертки
 
         self._inX = np.pad(x, self._padding, mode='constant', constant_values=self._padding_value) # Добавляем к входному изо паддинг
 
+        # Да благославит нас бог матана
         convResult = np.zeros((BS, self._outC, outH, outW))
         for channel in range(self._inC):
             for v_shift in range(0, H - self._kernel_size[1], self._stride):
