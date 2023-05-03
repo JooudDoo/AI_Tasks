@@ -72,7 +72,7 @@ class BasicModule:
                 else:
                     self._hid_inX.append(arg)
         self._hid_outX = self.forward(*args, **kwds)
-        if self._hid_outX._source is None:
+        if self._hid_outX._source is None: # Если данные уже с меткой -> текущий модуль служебный и не имеет backward_impl
             self._hid_outX._source = self
         return self._hid_outX
 
@@ -80,6 +80,10 @@ class BasicModule:
         raise NotImplementedError(f"[{type(self).__name__}] is missing the required \"forward\" function")
 
     def backward(self, dOut = None):
+        # !TODO переделать backward и backward_impl
+        # Чтобы при создании нового модуля со своим backprop пользователь создавал функцию backward
+        # А в свою очередь auto-backprop вызывал бы backward_impl, который бы вызывал backward пользователя
+        # !TODO сделать отдельную функцию для начала раскручивания авто-бэкпропа
         if self.backward_impl is not None:
             return self.backward_impl(dOut)
         raise NotImplementedError(f"[{type(self).__name__}] is missing the required \"backward_impl\" function")
@@ -100,6 +104,7 @@ class BasicModule:
         """
         if self._hid_outX is not None:
             if self.backward_impl is not None:
+                # !TODO учесть что у нас может возвращатся несколько производных для нескольких входов и нам нужно будет их отправлять 
                 dOut = self.backward_impl(dOut)
             for inArg in self._hid_inX:
                 if inArg._source is not None:

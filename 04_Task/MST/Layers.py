@@ -149,7 +149,7 @@ class Conv2d(BasicModule):
         
         return convResult
 
-    def backward(self, dOut=None):
+    def backward_impl(self, dOut=None):
         return self._dinX
 
 if __name__ == '__main__':

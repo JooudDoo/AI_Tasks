@@ -4,7 +4,9 @@ import numpy as np
 
 def default_random_normal_dist__(size : tuple):
     return np.random.normal(loc=0, scale=1, size = size)
-    
+
+# !TODO rename to HE_weight_init__
+# !TODO добавить параметр slope для разных типов активации (sigmoid/leakyRelu...)
 def ReLU_weight_init__(size : tuple):
     """
         Нулевое среднее
