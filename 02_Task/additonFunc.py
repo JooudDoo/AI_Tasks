@@ -19,11 +19,11 @@ def uniqufy_path(path):
     
     return path
 
-def create_image_plot(row_len : int = None, **images):
+def create_image_plot(row_len : int = None, figsize = (16,6), **images):
     n_images = len(images)
     if row_len is None:
         row_len = n_images
-    fig = plt.figure(figsize=(16, 6))
+    fig = plt.figure(figsize=figsize)
     for idx, (name, image) in enumerate(images.items()):
         ax = fig.add_subplot(idx//row_len+1, n_images, idx+1)
         ax.set_title(name.title(), fontsize=16)
