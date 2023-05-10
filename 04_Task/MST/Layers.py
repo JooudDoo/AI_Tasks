@@ -110,8 +110,8 @@ class Conv2d(BasicModule):
         self.__init_weights()
 
     def __init_weights(self):
-        self._w = default_random_normal_dist__((self._outC, self._inC // self._groups, *self._kernel_size))
-        self._b = default_random_normal_dist__(size=(1, self._outC, 1, 1)) if self._use_bias else np.zeros(shape=(1, self._outC, 1, 1))
+        self._w = ReLU_weight_init__(size=(self._outC, self._inC // self._groups, *self._kernel_size))
+        self._bias = ReLU_weight_init__(size=(1, self._outC, 1, 1)) if self._use_bias else np.zeros(shape=(1, self._outC, 1, 1))
 
     def _calculate_output_sizes(self, inH : int, inW : int):
         """
@@ -134,22 +134,60 @@ class Conv2d(BasicModule):
     def forward(self, x):
         BS, C, H, W = x.shape
 
-        outH, outW = self._calculate_output_sizes(H, W) # Вычисляем размер изо после свертки
+        self.__outH, self.__outW = self._calculate_output_sizes(H, W) # Вычисляем размер изо после свертки
 
-        self._inX = np.pad(x, self._padding, mode='constant', constant_values=self._padding_value) # Добавляем к входному изо паддинг
+        self._inX = np.pad(x, [(0,0), (0,0), self._padding, self._padding], mode='constant', constant_values=self._padding_value) # Добавляем к входному изо паддинг
 
         # Да благославит нас бог матана
-        convResult = np.zeros((BS, self._outC, outH, outW))
-        for channel in range(self._inC):
-            for v_shift in range(0, H - self._kernel_size[1], self._stride):
-                for h_shift in range(0, W - self._kernel_size[0], self._stride):
-                    convResult[:, channel, v_shift, h_shift] = np.sum(
-                        self._inX[:, channel, v_shift:v_shift+self._kernel_size[1], h_shift:h_shift+self._kernel_size[0]] * self._w
-                    )
+        self._outX = np.zeros((BS, self._outC, self.__outH, self.__outW))
+        # Вроде работает (Больше векторизации богу векторизации) !TODO
+        for i in range(self.__outH):
+            for j in range(self.__outW):
+                # extract the region of the input
+                x_part = self._inX[:, :, i*self._stride:i*self._stride+self._kernel_size[0], j*self._stride:j*self._stride+self._kernel_size[1]]
+                # reshape the input and the filter for matrix multiplication
+                x_part = x_part.reshape(BS, -1)
+                w_reshape = self._w.reshape(self._outC, -1)
+                # matrix multiplication and reshape back to output shape
+                out_part = np.dot(x_part, w_reshape.T).reshape(BS, self._outC)
         
-        return convResult
+        self._outX += np.tile(self._bias, (BS, 1, self.__outH, self.__outW))
+        
+        return self._outX
 
     def backward_impl(self, dOut=None):
+        ## REDO THIS !TODO
+        BS, _, _, _ = dOut.shape
+
+        self._dw = np.zeros_like(self._w)
+
+        if self._use_bias:
+            self._dbias = np.zeros_like(self._bias)
+
+        self._dinX_pad = np.zeros_like(self._inX)
+        
+        for g in range(self._groups):
+                x_part = self._inX[:, g*self._inC:(g+1)*self._inC, :, :]
+                dout_part = dOut[:, g, :, :][:, np.newaxis, :, :, np.newaxis]
+                self._dw[g] += np.sum(x_part[:, :, np.newaxis, :, :, :] * dout_part[:, np.newaxis, :, :, :, :], axis=0)
+                dout_reshaped = np.broadcast_to(dout_part, (BS, self._outC // self._groups, self.__outH, self.__outW, self._inC, self._kernel_size[0], self._kernel_size[1]))
+                self._dinX_pad[:, g*self._inC:(g+1)*self._inC, :, :] += np.sum(self._w[g][np.newaxis, :, :, :, :, :] * dout_reshaped[:, :, :, :, :, ::-1, ::-1], axis=(1, 4, 5, 6))
+        
+
+        # for i in range(self.__outH):
+        #     for j in range(self.__outW):
+        #         input_mask = self._inX[:, :, i*self._stride:i*self._stride+self._dilation*self._kernel_size[0]:self._dilation, j*self._stride:j*self._stride+self._dilation*self._kernel_size[1]:self._dilation]
+        #         for k in range(self._outC):
+        #             # Вычисляем градиенты для dX_pad, dW, и db
+        #             self._dinX_pad[:, :, i*self._stride:i*self._stride+self._dilation*self._kernel_size[0]:self._dilation, j*self._stride:j*self._stride+self._dilation*self._kernel_size[1]:self._dilation] += self._w[k,:,:,:] * dOut[:,k,i,j][:,None,None,None]
+        #             self._dw[k,:,:,:] += np.sum(input_mask * (dOut[:,k,i,j])[:,None,None,None], axis=0)
+        
+        if self._use_bias:
+            self._dbias = np.sum(dOut, axis=(0, 2, 3), keepdims=True)
+            
+        # Удаление padding
+        self._dinX = self._dinX_pad[:, :, self._padding[0]:-self._padding[0], self._padding[1]:-self._padding[1]]
+
         return self._dinX
 
 if __name__ == '__main__':

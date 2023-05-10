@@ -72,6 +72,8 @@ class BasicModule:
                 else:
                     self._hid_inX.append(arg)
         self._hid_outX = self.forward(*args, **kwds)
+        if(not isinstance(self._hid_outX, MDT_REFACTOR_ARRAY)):
+            self._hid_outX = MDT_ARRAY(self._hid_outX)
         if self._hid_outX._source is None: # Если данные уже с меткой -> текущий модуль служебный и не имеет backward_impl
             self._hid_outX._source = self
         return self._hid_outX
@@ -154,6 +156,16 @@ class BasicModule:
         result_string = f"{self.__class__.__name__}:\n"
         return result_string + self.__stringify(self)
 
+class Flatten(BasicModule):
+    def __init__(self):
+        super().__init__()
+    
+    def forward(self, x):
+        self.__inshape = x.shape
+        return x.reshape(x.shape[0], -1)
+    
+    def backward_impl(self, dOut = None):
+        return dOut.reshape(self.__inshape)
 
 class Sequential(BasicModule):
     """
