@@ -39,9 +39,7 @@ class CrossEntropyLoss(BasicModule):
             Применяем softMax чтобы привести входы к вектору вероятностей
             Добавляем очень маленькое число для стабильности
         """
-        # self._smOut = None
         self._smOut = softMax(x) + 1e-9
-        # print("\nF:", x, "\n", self._smOut, "\n", self._origin, "\n\n")
 
         self._outX = -np.sum(self._origin * np.log(self._smOut)) / self._batch_size
         return self._outX

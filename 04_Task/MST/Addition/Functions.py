@@ -7,7 +7,7 @@ def default_random_normal_dist__(size : tuple):
 
 # !TODO rename to HE_weight_init__
 # !TODO добавить параметр slope для разных типов активации (sigmoid/leakyRelu...)
-def ReLU_weight_init__(size : tuple):
+def ReLU_weight_init__(size : tuple, dtype = np.float32):
     """
         Нулевое среднее
         Но дисперсия должна быть с учетом размера входных параметров
@@ -19,7 +19,7 @@ def ReLU_weight_init__(size : tuple):
         for d in size[2:]:
             receptive *= d
     disp = np.sqrt(2/(outS*receptive))
-    return np.random.normal(loc=0, scale=disp, size=size)
+    return np.random.normal(loc=0, scale=disp, size=size).astype(dtype)
 
 
 def sigmoid(x):

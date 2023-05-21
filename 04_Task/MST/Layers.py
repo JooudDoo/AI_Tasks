@@ -1,7 +1,7 @@
 import numpy as np
 
 from .BasicModules import BasicModule
-from .MDT import MDT_REFACTOR_ARRAY
+from .MDT import MDT_REFACTOR_ARRAY, MDT_ARRAY
 
 from .Addition.Functions import default_random_normal_dist__, ReLU_weight_init__
 
@@ -98,11 +98,12 @@ class Conv2d(BasicModule):
         self._kernel_size = kernel_size if isinstance(kernel_size, tuple) else (kernel_size, kernel_size)
 
         self._padding = padding if isinstance(padding, tuple) else (padding, padding)
+        self._padding = (self._padding[0] * 2, self._padding[1] * 2)
         self._padding_value = padding_value
 
-        self._stride = stride
+        self._stride = stride if isinstance(stride, tuple) else (stride, stride)
         
-        self._groups = groups
+        self._groups = groups # Not implemented 
         self._dilation = dilation
 
         self._use_bias = use_bias
@@ -127,11 +128,37 @@ class Conv2d(BasicModule):
         """
         outSize = inSize
         outSize += self._padding[dim] # Add padding addition size
-        outSize -= self._dilation*(self._kernel_size[dim]-1)-1
-        outSize //= self._stride
-        return outSize
+        outSize -= self._dilation*(self._kernel_size[dim]-1)
+        outSize //= self._stride[dim]
+        return outSize + 1
 
     def forward(self, x):
+        BS, C, H, W = x.shape
+
+        self.__outH, self.__outW = self._calculate_output_sizes(H, W) # Вычисляем размер изо после свертки
+
+        self._inX = np.pad(x, [(0,0), (0,0), self._padding, self._padding], mode='constant', constant_values=self._padding_value) # Добавляем к входному изо паддинг
+
+        self._outX = MDT_ARRAY(np.zeros((BS, self._outC, self.__outH, self.__outW))) # Создаем выходное изо
+
+        for i in range(self.__outH):
+            for j in range(self.__outW):
+                input_patch = self._inX[:, :, i * self._stride[0]:i * self._stride[0] + self._kernel_size[0] * self._dilation:self._dilation,
+                            j * self._stride[1]:j * self._stride[1] + self._kernel_size[1] * self._dilation:self._dilation]
+
+                for k in range(self._groups):
+                    input_group = input_patch[:, k * (self._inC // self._groups):(k + 1) * (self._inC // self._groups)]
+                    weight_group = self._w[k * (self._outC // self._groups):(k + 1) * (self._outC // self._groups)]
+
+                    self._outX[:, k * (self._outC // self._groups):(k + 1) * (self._outC // self._groups), i, j] = np.sum(
+                        input_group[:, np.newaxis] * weight_group, axis=(2, 3, 4))
+
+
+        self._outX += np.tile(self._bias, (BS, 1, self.__outH, self.__outW))
+
+        return self._outX
+
+    def forward_old(self, x):
         BS, C, H, W = x.shape
 
         self.__outH, self.__outW = self._calculate_output_sizes(H, W) # Вычисляем размер изо после свертки
@@ -189,8 +216,3 @@ class Conv2d(BasicModule):
         self._dinX = self._dinX_pad[:, :, self._padding[0]:-self._padding[0], self._padding[1]:-self._padding[1]]
 
         return self._dinX
-
-if __name__ == '__main__':
-    c = Conv2d(3, 9, 3, padding=1)
-
-    

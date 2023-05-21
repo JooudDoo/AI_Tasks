@@ -1,4 +1,4 @@
-
+from numpy import ndarray
 from .MDT import MDT_REFACTOR_ARRAY, MDT_ARRAY
 
 class BasicModule:
@@ -72,7 +72,7 @@ class BasicModule:
                 else:
                     self._hid_inX.append(arg)
         self._hid_outX = self.forward(*args, **kwds)
-        if(not isinstance(self._hid_outX, MDT_REFACTOR_ARRAY)):
+        if(not isinstance(self._hid_outX, MDT_REFACTOR_ARRAY) and isinstance(self._hid_outX, ndarray)):
             self._hid_outX = MDT_ARRAY(self._hid_outX)
         if self._hid_outX._source is None: # Если данные уже с меткой -> текущий модуль служебный и не имеет backward_impl
             self._hid_outX._source = self
