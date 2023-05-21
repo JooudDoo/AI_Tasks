@@ -1,0 +1,1 @@
+[31m[1mrequirements:[0m /home/sega/progs/AI_Tasks/03_Task/requirements.txt not found, check failed.
