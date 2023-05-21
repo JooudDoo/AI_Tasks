@@ -7,3 +7,5 @@ runs/
 AIenv/
 TB_cache/
 AugmentsTests/
+yoloenv/
+yolov5/
