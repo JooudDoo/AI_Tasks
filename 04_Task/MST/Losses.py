@@ -84,4 +84,9 @@ class CrossEntropyLoss(BasicModule):
                     if inX._source is not None:
                         inX._source._auto_backward(dLoss)
         else:
-            raise ValueError("TODO text for error")
+            dLoss = (self._smOut - self._origin) / self._batch_size
+            if self._hid_inX is not None:
+                for inX in self._hid_inX:
+                    if inX._source is not None:
+                        inX._source._auto_backward(dLoss)
+            # raise ValueError("TODO text for error")

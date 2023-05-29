@@ -91,7 +91,7 @@ class FullyConnectedLayer(BasicModule):
 
 class Conv2d(BasicModule):
 
-    def __init__(self, inC : int, outC : int, kernel_size, stride = 1, padding = 0, dilation = 1, use_bias = True, padding_value : float = 0):
+    def __init__(self, inC : int, outC : int, kernel_size, stride = 1, padding = 0, dilation = 1, use_bias = False, padding_value : float = 0):
         super().__init__()
         self._inC = inC
         self._outC = outC
@@ -133,7 +133,6 @@ class Conv2d(BasicModule):
 
     def forward(self, x):
         BS, C, H, W = x.shape
-
         self._output_size = self._calculate_output_sizes(H, W)
 
         self._inX = np.pad(x, [(0,0), (0,0), self._padding, self._padding], mode='constant', constant_values=self._padding_value)
@@ -142,9 +141,10 @@ class Conv2d(BasicModule):
         self._flatten_w = self._w.reshape(self._outC, -1)
 
         self._outX = np.dot(self._flatten_w, self._inX_cols).reshape(self._outC, *self._output_size, BS)
-        self._outX = MDT_ARRAY(self._outX.transpose(3, 0, 1, 2))
+        self._outX = self._outX.transpose(3, 0, 1, 2)
 
-        self._outX += np.tile(self._bias, (BS, 1, *self._output_size))
+        if self._use_bias:
+            self._outX += np.tile(self._bias, (BS, 1, *self._output_size))
         return self._outX
     
     def backward_impl(self, dOut=None):
@@ -178,18 +178,16 @@ def img2col(image, output_size, kernel_size, stride):
 
     return col_matrix
 
-
 def col2im(cols, image_shape, output_size, kernel_size, stride, padding):
     BS, C, H, W = image_shape
 
-    patches = cols.reshape(BS, *output_size, C, *kernel_size).transpose(0, 3, 4, 5, 1, 2)
+    patches = cols.T.reshape(BS, *output_size, C, *kernel_size).transpose(0, 3, 4, 5, 1, 2)
 
     stride_h, stride_w = stride
     crop_h, crop_w = kernel_size
     padding_h, padding_w = padding
 
     image = np.zeros((BS, C, H, W))
-
     for i in range(output_size[0]):
         for j in range(output_size[1]):
             image[:, :, i * stride_h:i * stride_h + crop_h, j * stride_w:j * stride_w + crop_w] += patches[:, :, :, :, i, j]
