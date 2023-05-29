@@ -4,7 +4,7 @@ import numpy as np
 from .BasicModules import BasicModule
 from .MDT import MDT_REFACTOR_ARRAY
 
-from .Addition.Functions import sigmoid
+from .Addition import sigmoid
 
 class Sigmoid(BasicModule):
     #!TODO вынести функции сигмоиды в папку Addition

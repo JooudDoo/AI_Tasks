@@ -3,7 +3,7 @@ import numpy as np
 from .BasicModules import BasicModule
 from .MDT import MDT_REFACTOR_ARRAY
 
-from .Addition.Functions import softMax
+from .Addition import softMax
 
 class CrossEntropyLoss(BasicModule):
     """
@@ -26,7 +26,7 @@ class CrossEntropyLoss(BasicModule):
     def forward(self, x, origin) -> MDT_REFACTOR_ARRAY:
         self._inX = x
         self._batch_size = x.shape[0]
-
+        self._origin = origin
         if x.shape != origin.shape:
             """
                 Если получаем на вход разные размеры у x и origin

@@ -108,9 +108,10 @@ class BasicModule:
             if self.backward_impl is not None:
                 # !TODO учесть что у нас может возвращатся несколько производных для нескольких входов и нам нужно будет их отправлять 
                 dOut = self.backward_impl(dOut)
-            for inArg in self._hid_inX:
-                if inArg._source is not None:
-                    inArg._source._auto_backward(dOut)
+            if self._hid_inX is not None:
+                for inArg in self._hid_inX:
+                    if inArg._source is not None:
+                        inArg._source._auto_backward(dOut)
 
             self.__zero_auto_backward_state()
         else:

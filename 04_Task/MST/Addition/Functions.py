@@ -1,6 +1,4 @@
-
 import numpy as np
-
 
 def default_random_normal_dist__(size : tuple):
     return np.random.normal(loc=0, scale=1, size = size)
@@ -20,7 +18,6 @@ def ReLU_weight_init__(size : tuple, dtype = np.float32):
             receptive *= d
     disp = np.sqrt(2/(outS*receptive))
     return np.random.normal(loc=0, scale=disp, size=size).astype(dtype)
-
 
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
