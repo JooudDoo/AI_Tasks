@@ -19,12 +19,12 @@ class SGD:
 
     def __create_modules_momentum_params(self):
         for id, module in enumerate(self.modules):
-            if self.momentum == 0: # Если моментум не задан, то не выделяем место под сохранение velocity
+            if self.momentum == 0:
                 self.modules[id] = (None, module)
             else:
                 velocity_params = {}
                 for attribute, _ in self._target_attributes.items():
-                    if module.get_by_name(attribute) is not None: # Проверяем есть ли параметр из целевых для оптимизации в слое
+                    if module.get_by_name(attribute) is not None:
                         velocity_params.update({attribute: np.zeros_like(module.get_by_name(attribute))})
                 self.modules[id] = (velocity_params, module)
 
@@ -46,7 +46,7 @@ class SGD:
             if isinstance(sub_module, dict):
                 modules_d = self.__generate_modules_list(sub_module, modules_d)
             else:
-                if sub_module.isTrainable(): # Проверяем является ли модуль обучаемым
+                if sub_module.isTrainable():
                     modules_d.append(sub_module)
         return modules_d
 

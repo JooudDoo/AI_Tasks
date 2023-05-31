@@ -13,13 +13,6 @@ class CrossEntropyLoss(BasicModule):
 
         Также при необходимости переводит origin к one_hot encoded вектору
     """
-    #!REDO
-    # Скорее всего нужно делать другую инициализацию весов
-    # Некорректная работа с функцией активации ReLU
-    # Приходят слишком большие значение на вход или одни нули
-    # В итоге после софтмакс получаем что градиенты назада тякут вяло
-    # решение - ???
-    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     def __init__(self):
         super().__init__()
 
@@ -84,9 +77,4 @@ class CrossEntropyLoss(BasicModule):
                     if inX._source is not None:
                         inX._source._auto_backward(dLoss)
         else:
-            dLoss = (self._smOut - self._origin) / self._batch_size
-            if self._hid_inX is not None:
-                for inX in self._hid_inX:
-                    if inX._source is not None:
-                        inX._source._auto_backward(dLoss)
-            # raise ValueError("TODO text for error")
+            raise ValueError("TODO text for error")

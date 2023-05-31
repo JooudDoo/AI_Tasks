@@ -12,7 +12,7 @@ class Sigmoid(BasicModule):
         super().__init__()
     
     def forward(self, x) -> MDT_REFACTOR_ARRAY:
-        self._inX = np.clip(x, -600, 600) # Используем clip для предотвращения переполнения экспоненты
+        self._inX = np.clip(x, -600, 600)
         self._outX = sigmoid(self._inX)
         return self._outX
 

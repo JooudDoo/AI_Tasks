@@ -17,15 +17,9 @@ class FullyConnectedLayer(BasicModule):
         self._bias = ReLU_weight_init__(size=(1, out_size)) if use_bias else np.zeros(shape=(1, out_size))
 
     def forward(self, x) -> MDT_REFACTOR_ARRAY:
-        self._inX = x # .shape() = [batch_size, in_size]
-
-        """
-            Делаем сначало умножение матрицы на матрицу
-            В итоге получаем матрицу [batch_size, out_size]
-            С помощью np.tile делаем "broadcasting" для того чтобы учесть любый входной batchsize
-        """
+        self._inX = x
         self._outX = np.dot(x, self._w) + np.tile(self._bias, (x.shape[0], 1))
-        return self._outX # .shape() = [batch_size, out_size]
+        return self._outX
 
     def backward_impl(self, dOut = None):        
         """
@@ -111,7 +105,7 @@ class Conv2d(BasicModule):
 
     def __init_weights(self):
         self._w = ReLU_weight_init__(size=(self._outC, self._inC, *self._kernel_size))
-        self._bias = ReLU_weight_init__(size=(1, self._outC, 1, 1)) if self._use_bias else np.zeros(shape=(1, self._outC, 1, 1))
+        self._bias = np.zeros(shape=(1, self._outC, 1, 1)) #ReLU_weight_init__(size=(1, self._outC, 1, 1)) if self._use_bias else 
     
     def _calculate_output_sizes(self, inH : int, inW : int):
         """
@@ -130,7 +124,7 @@ class Conv2d(BasicModule):
         outSize -= self._dilation*(self._kernel_size[dim]-1)+1
         outSize //= self._stride[dim]
         return outSize + 1
-
+    
     def forward(self, x):
         BS, C, H, W = x.shape
         self._output_size = self._calculate_output_sizes(H, W)
