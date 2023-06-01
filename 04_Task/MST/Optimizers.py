@@ -4,7 +4,6 @@ import numpy as np
 from .BasicModules import BasicModule
 
 class SGD:
-    #!TODO with momentum
 
     _target_attributes = {
         '_w': '_dw',

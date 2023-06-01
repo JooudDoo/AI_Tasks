@@ -3,9 +3,8 @@ import numpy as np
 def default_random_normal_dist__(size : tuple):
     return np.random.normal(loc=0, scale=1, size = size)
 
-# !TODO rename to HE_weight_init__
 # !TODO добавить параметр slope для разных типов активации (sigmoid/leakyRelu...)
-def Relu_weight_init__(size : tuple, dtype = np.float32):
+def HE_weight_init__(size : tuple, dtype = np.float32):
     """
         Нулевое среднее
         Но дисперсия должна быть с учетом размера входных параметров
@@ -23,7 +22,6 @@ def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
 def softMax(x):
-    #!TODO оформить как полноценный слой
     # Вычитаем из всех X - максимум по X, чтобы уменьшить переполнение экспоненты
     x_exp = np.exp(x - np.max(x, axis=1, keepdims=True))
     outX = x_exp / np.sum(x_exp, axis=1, keepdims=True)

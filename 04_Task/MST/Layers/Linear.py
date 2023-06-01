@@ -3,7 +3,7 @@ import numpy as np
 from MST import BasicModule
 from MST import MDT_REFACTOR_ARRAY, MDT_ARRAY
 
-from MST.Addition import Relu_weight_init__
+from MST.Addition import HE_weight_init__
 
 class Linear(BasicModule):
 
@@ -12,7 +12,7 @@ class Linear(BasicModule):
 
         self._inX = None
         self._use_bias = use_bias
-        self._w = Relu_weight_init__(size=(in_size, out_size))
+        self._w = HE_weight_init__(size=(in_size, out_size))
         self._bias = np.zeros(shape=(1, out_size), dtype=np.float32)
 
     def forward(self, x) -> MDT_REFACTOR_ARRAY:

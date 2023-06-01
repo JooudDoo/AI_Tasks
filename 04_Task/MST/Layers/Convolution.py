@@ -2,7 +2,7 @@
 import numpy as np
 
 from MST import MDT_REFACTOR_ARRAY, MDT_ARRAY
-from MST.Addition import Relu_weight_init__
+from MST.Addition import HE_weight_init__
 
 from .Basic import ConvBasicModule
 
@@ -18,8 +18,8 @@ class Conv2d(ConvBasicModule):
         self.__init_weights()
 
     def __init_weights(self):
-        self._w = Relu_weight_init__(size=(self._outC, self._inC, *self._kernel_size))
-        self._bias = np.zeros(shape=(1, self._outC, 1, 1), dtype=np.float32) #Relu_weight_init__(size=(1, self._outC, 1, 1)) if self._use_bias else 
+        self._w = HE_weight_init__(size=(self._outC, self._inC, *self._kernel_size))
+        self._bias = np.zeros(shape=(1, self._outC, 1, 1), dtype=np.float32) #HE_weight_init__(size=(1, self._outC, 1, 1)) if self._use_bias else 
     
     def forward(self, x):
         BS, C, H, W = x.shape

@@ -123,7 +123,6 @@ class BasicModule:
         # If there are output values, you can backward (because forward was) Also check that all links were closed or this layer is the initiator of backward calculation
         if self._hid_outX is not None and (self._hidden_links_count == 0 or dOut is None):
             if self.backward_impl is not None:
-                # !TODO учесть что у нас может возвращатся несколько производных для нескольких входов и нам нужно будет их отправлять 
                 dOut = self.backward(dOut)
             if self._hid_inX is not None:
                 for inArg in self._hid_inX:

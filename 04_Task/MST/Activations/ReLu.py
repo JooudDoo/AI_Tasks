@@ -4,7 +4,6 @@ from MST import BasicModule
 from MST import MDT_REFACTOR_ARRAY
 
 class Relu(BasicModule):
-    #!TODO вынести функции Relu в папку Addition
     def __init__(self):
         super().__init__()
     
