@@ -72,9 +72,42 @@ class CrossEntropyLoss(BasicModule):
         """
         if dOut is None:
             dLoss = (self._smOut - self._origin) / self._batch_size
-            if self._hid_inX is not None:
-                for inX in self._hid_inX:
-                    if inX._source is not None:
-                        inX._source._auto_backward(dLoss)
+            self._inX.backward(dLoss)
+        else:
+            raise ValueError("TODO text for error")
+        
+class MAE(BasicModule):
+    def __init__(self):
+        super().__init__()
+    
+    def forward(self, x, origin) -> MDT_REFACTOR_ARRAY:
+        self._inX = x
+        self._batch_size = x.shape[0]
+        self._origin = origin
+
+        return np.mean(np.abs(self._inX - self._origin))
+
+    def backward_impl(self, dOut = None):
+        if dOut is None:
+            dLoss = np.sign(self._origin - self._inX) / self._batch_size
+            self._inX.backward(dLoss)
+        else:
+            raise ValueError("TODO text for error")
+
+class MSE(BasicModule):
+    def __init__(self):
+        super().__init__()
+    
+    def forward(self, x, origin) -> MDT_REFACTOR_ARRAY:
+        self._inX = x
+        self._batch_size = x.shape[0]
+        self._origin = origin
+
+        return np.mean(np.power(self._inX - self._origin, 2))
+
+    def backward_impl(self, dOut = None):
+        if dOut is None:
+            dLoss = 2 * (self._origin - self._inX) / self._batch_size
+            self._inX.backward(dLoss)
         else:
             raise ValueError("TODO text for error")
