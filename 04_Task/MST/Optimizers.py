@@ -72,7 +72,6 @@ class SGD:
                 else:
                     bad_params += 1
                     if bad_params == len(self._target_attributes.items()):
-                        if not module._auto_backward_state():
-                            raise RuntimeError(f"You should run forward function like __call__ on {module.__class__.__name__}")
-                        else:
+                        if module._auto_backward_state():
                             raise RuntimeError(f"It is necessary to backward first before optimization")
+                            

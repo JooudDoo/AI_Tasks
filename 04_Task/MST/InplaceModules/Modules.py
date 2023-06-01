@@ -1,11 +1,11 @@
 
 import MST
 
-def ReLU(val : MST.MDT_REFACTOR_ARRAY) -> MST.MDT_REFACTOR_ARRAY:
-    return MST.ReLU()(val)
+def Relu(val : MST.MDT_REFACTOR_ARRAY) -> MST.MDT_REFACTOR_ARRAY:
+    return MST.Relu()(val)
 
-def Sigmoid(val : MST.MDT_REFACTOR_ARRAY) -> MST.MDT_REFACTOR_ARRAY:
+def sigmoid(val : MST.MDT_REFACTOR_ARRAY) -> MST.MDT_REFACTOR_ARRAY:
     return MST.Sigmoid()(val)
 
-def Flatten(val : MST.MDT_REFACTOR_ARRAY):
+def flatten(val : MST.MDT_REFACTOR_ARRAY):
     return MST.Flatten()(val)

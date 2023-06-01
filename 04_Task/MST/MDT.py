@@ -10,6 +10,7 @@ class MDT_REFACTOR_ARRAY(np.ndarray):
 def MDT_ARRAY(*args, **kwargs) -> MDT_REFACTOR_ARRAY:
     #!TODO придумать нормальное название
     a = np.array(*args, **kwargs)
+    a.astype(np.float32)
     a = a.view(MDT_REFACTOR_ARRAY)
     a._source = None
     return a
