@@ -5,7 +5,12 @@ class MDT_REFACTOR_ARRAY(np.ndarray):
     _source = None
     
     def backward(self, dOut = None):
-        self._source.backward(dOut)
+        self._source._auto_backward(dOut)
+
+    def copy(self, *args, **kwargs):
+        cp = super().copy()
+        cp._source = self._source
+        return cp
 
 def MDT_ARRAY(*args, **kwargs) -> MDT_REFACTOR_ARRAY:
     #!TODO придумать нормальное название

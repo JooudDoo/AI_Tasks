@@ -1,4 +1,6 @@
 
+import numpy as np
+
 from MST import BasicModule
 
 class ConvBasicModule(BasicModule):
@@ -32,3 +34,55 @@ class ConvBasicModule(BasicModule):
         outSize -= self._dilation*(self._kernel_size[dim]-1)+1
         outSize //= self._stride[dim]
         return outSize + 1
+    
+    def __im2col_indices_calc(self, image_shape):
+        _, C, H, W = image_shape
+        stride_h, stride_w = self._stride
+        kernel_h, kernel_w = self._kernel_size
+
+        output_height, output_width = self._output_size
+
+        i0 = np.repeat(np.arange(kernel_h), kernel_w)
+        i0 = np.tile(i0, C)
+        i1 = stride_h * np.repeat(np.arange(output_height), output_width)
+        j0 = np.tile(np.arange(kernel_w), kernel_h * C)
+        j1 = stride_w * np.tile(np.arange(output_width), output_height)
+
+        i = i0.reshape(-1, 1) + i1.reshape(1, -1)
+        j = j0.reshape(-1, 1) + j1.reshape(1, -1)
+
+        k = np.repeat(np.arange(C), kernel_h * kernel_w).reshape(-1, 1)
+        return (i, j, k)
+    
+    def _im2col(self, image):
+        _, C, H, W = image.shape
+
+        kernel_h, kernel_w = self._kernel_size
+
+        i, j, k =  self.__im2col_indices_calc(image.shape)
+
+        cols = image[:, k, i, j].transpose(1, 2, 0).reshape(kernel_h*kernel_w*C, -1)
+
+        return cols
+    
+    def _col2im(self, cols, image_shape):
+        BS, C, H, W = image_shape
+
+        padding_h, padding_w = self._padding
+        kernel_h, kernel_w = self._kernel_size
+
+        cols = cols.reshape(kernel_h * kernel_w * C, -1, BS)
+        cols = cols.transpose(2, 0, 1)
+
+        image = np.zeros((BS, C, H, W))
+
+        i, j, k = self.__im2col_indices_calc(image_shape)
+
+        np.add.at(image, (slice(None), k, i, j), cols)
+
+        if padding_h > 0:
+            image = image[:, :, padding_h:-padding_h, :]
+        if padding_w > 0:
+            image = image[:, :, :, padding_w:-padding_w]
+        
+        return image

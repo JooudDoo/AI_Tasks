@@ -56,9 +56,20 @@ class BasicModule:
     def __zero_auto_backward_state(self):
         self._hid_inX = None
         self._hid_outX = None
+        self.__hidden_dOut = None
+        self._hidden_links_count = 0 # the number of blocks that received our output value
 
     def _auto_backward_state(self):
         return self._hid_inX is not None
+
+    def _add_hidden_output_link_count(self):
+        self._hidden_links_count += 1
+
+    def _add_hidden_out(self, dOut):
+        if self.__hidden_dOut is None:
+            self.__hidden_dOut = dOut
+        else: # TODO check sizes
+            self.__hidden_dOut += dOut
 
     def __call__(self, *args, **kwds):
         """
@@ -71,6 +82,9 @@ class BasicModule:
                     self._hid_inX = [arg]
                 else:
                     self._hid_inX.append(arg)
+                if arg._source is not None: # If the source of our data is not None, then add to it the number of linked data references
+                    arg._source._add_hidden_output_link_count()
+        
         self._hid_outX = self.forward(*args, **kwds)
         if(not isinstance(self._hid_outX, MDT_REFACTOR_ARRAY) and isinstance(self._hid_outX, ndarray)):
             self._hid_outX = MDT_ARRAY(self._hid_outX)
@@ -82,10 +96,11 @@ class BasicModule:
         raise NotImplementedError(f"[{type(self).__name__}] is missing the required \"forward\" function")
 
     def backward(self, dOut = None):
-        # !TODO переделать backward и backward_impl
-        # Чтобы при создании нового модуля со своим backprop пользователь создавал функцию backward
-        # А в свою очередь auto-backprop вызывал бы backward_impl, который бы вызывал backward пользователя
-        # !TODO сделать отдельную функцию для начала раскручивания авто-бэкпропа
+        if self.__hidden_dOut is not None:
+            if dOut is None:
+                dOut = self.__hidden_dOut
+            else:
+                dOut += self.__hidden_dOut
         if self.backward_impl is not None:
             return self.backward_impl(dOut)
         raise NotImplementedError(f"[{type(self).__name__}] is missing the required \"backward_impl\" function")
@@ -104,18 +119,21 @@ class BasicModule:
 
             В конце зануляем состояния для проходов
         """
-        if self._hid_outX is not None:
+        self._hidden_links_count -= 1
+        # If there are output values, you can backward (because forward was) Also check that all links were closed or this layer is the initiator of backward calculation
+        if self._hid_outX is not None and (self._hidden_links_count == 0 or dOut is None):
             if self.backward_impl is not None:
                 # !TODO учесть что у нас может возвращатся несколько производных для нескольких входов и нам нужно будет их отправлять 
-                dOut = self.backward_impl(dOut)
+                dOut = self.backward(dOut)
             if self._hid_inX is not None:
                 for inArg in self._hid_inX:
                     if inArg._source is not None:
-                        inArg._source._auto_backward(dOut)
+                        inArg._source._add_hidden_out(dOut)
+                for inArg in self._hid_inX:
+                    if inArg._source is not None:
+                        inArg._source._auto_backward()
 
             self.__zero_auto_backward_state()
-        else:
-            raise RuntimeError(f"You should make forward pass before auto-backward on {self.__class__.__name__}")
 
     def isTrainable(self):
         return self._w is not None or self._bias is not None

@@ -4,7 +4,7 @@ import numpy as np
 from MST import MDT_REFACTOR_ARRAY, MDT_ARRAY
 from MST.Addition import Relu_weight_init__
 
-from .Basic import ConvBasicModule, col2im, im2col
+from .Basic import ConvBasicModule
 
 class Conv2d(ConvBasicModule):
 
@@ -27,7 +27,7 @@ class Conv2d(ConvBasicModule):
 
         self._inX = np.pad(x, [(0,0), (0,0), (self._padding[0], self._padding[0]), (self._padding[1], self._padding[1])], mode='constant', constant_values=self._padding_value)
 
-        self._inX_cols = im2col(self._inX, self._output_size, self._kernel_size, self._stride) # .shape() = [C * K * K, BS * H * W]
+        self._inX_cols = self._im2col(self._inX) # .shape() = [C * K * K, BS * H * W]
         self._flatten_w = self._w.reshape(self._outC, -1) # .shape() = [outC, inC * K * K]
 
         self._outX = np.dot(self._flatten_w, self._inX_cols).reshape(self._outC, *self._output_size, BS)
@@ -43,7 +43,7 @@ class Conv2d(ConvBasicModule):
         self._dw = np.dot(flatten_dOut, self._inX_cols.T).reshape(self._w.shape)
 
         self._dinX = np.dot(self._flatten_w.T, flatten_dOut)
-        self._dinX = col2im(self._dinX, self._inX.shape, self._output_size, self._kernel_size, self._stride, self._padding)
+        self._dinX = self._col2im(self._dinX, self._inX.shape)
 
         if self._use_bias:
             self._dbias = np.sum(dOut, axis=(0, 2, 3), keepdims=True)

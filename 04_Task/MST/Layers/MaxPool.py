@@ -3,7 +3,8 @@ import numpy as np
 
 from MST import MDT_REFACTOR_ARRAY, MDT_ARRAY
 
-from .Basic import ConvBasicModule, col2im, im2col
+from .Basic import ConvBasicModule
+
 class MaxPool2d(ConvBasicModule):
     def __init__(self, kernel_size, stride = 1, padding = 0, dilation = 1, padding_value = 0):
         super().__init__(kernel_size, stride, padding, dilation, padding_value)
@@ -14,7 +15,7 @@ class MaxPool2d(ConvBasicModule):
 
         self._inX = np.pad(x, [(0,0), (0,0), (self._padding[0], self._padding[0]), (self._padding[1], self._padding[1])], mode='constant', constant_values=self._padding_value)
         self._inX_cols = self._inX.reshape(BS * C, 1, H, W)
-        self._inX_cols = im2col(self._inX_cols, self._output_size, self._kernel_size, self._stride)  # .shape() = [C, K * K, BS * H * W]
+        self._inX_cols = self._im2col(self._inX_cols)  # .shape() = [C, K * K, BS * H * W]
 
         self._max_idx = np.argmax(self._inX_cols, axis=0) 
 
@@ -31,7 +32,7 @@ class MaxPool2d(ConvBasicModule):
         self._dinX = np.zeros_like(self._inX_cols)
         self._dinX[self._max_idx, range(self._max_idx.size)] = flatten_dOut
 
-        self._dinX = col2im(self._dinX, self._inX.shape, self._output_size, self._kernel_size, self._stride, self._padding)
+        self._dinX = self._col2im(self._dinX, self._inX.shape)
         self._dinX.reshape(self._inX.shape)
 
         return self._dinX
