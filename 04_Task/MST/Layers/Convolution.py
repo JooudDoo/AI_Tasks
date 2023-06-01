@@ -52,7 +52,7 @@ class Conv2d(BasicModule):
         BS, C, H, W = x.shape
         self._output_size = self._calculate_output_sizes(H, W)
 
-        self._inX = np.pad(x, [(0,0), (0,0), self._padding, self._padding], mode='constant', constant_values=self._padding_value)
+        self._inX = np.pad(x, [(0,0), (0,0), (self._padding[0], self._padding[0]), (self._padding[1], self._padding[1])], mode='constant', constant_values=self._padding_value)
 
         self._inX_cols = im2col_3(self._inX, self._output_size, self._kernel_size, self._stride) # .shape() = [C * K * K, BS * H * W]
         self._flatten_w = self._w.reshape(self._outC, -1) # .shape() = [outC, inC * K * K]
@@ -91,6 +91,7 @@ def im2col_3(image, output_size, kernel_size, stride):
     i1 = stride_h * np.repeat(np.arange(output_height), output_width)
     j0 = np.tile(np.arange(kernel_w), kernel_h * C)
     j1 = stride_w * np.tile(np.arange(output_width), output_height)
+
     i = i0.reshape(-1, 1) + i1.reshape(1, -1)
     j = j0.reshape(-1, 1) + j1.reshape(1, -1)
 
