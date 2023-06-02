@@ -1,5 +1,6 @@
 
 import numpy as np
+import warnings
 
 from MST import BasicModule
 
@@ -15,6 +16,8 @@ class ConvBasicModule(BasicModule):
 
         self._stride = stride if isinstance(stride, tuple) else (stride, stride)
         
+        if dilation != 1:
+            raise warnings.warn(f"This argument is not currently supported Dilation", RuntimeWarning)
         self._dilation = dilation
 
     def _calculate_output_sizes(self, inH : int, inW : int):
