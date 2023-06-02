@@ -82,7 +82,7 @@ class BasicModule:
                     self._hid_inX = [arg]
                 else:
                     self._hid_inX.append(arg)
-                if arg._source is not None: # If the source of our data is not None, then add to it the number of linked data references
+                if arg._source is not None and self.backward_impl is not None: # If the source of our data is not None, then add to it the number of linked data references
                     arg._source._add_hidden_output_link_count()
         
         self._hid_outX = self.forward(*args, **kwds)
@@ -121,7 +121,7 @@ class BasicModule:
         """
         self._hidden_links_count -= 1
         # If there are output values, you can backward (because forward was) Also check that all links were closed or this layer is the initiator of backward calculation
-        if self._hid_outX is not None and (self._hidden_links_count == 0 or dOut is None):
+        if self._hid_outX is not None and (self._hidden_links_count <= 0):
             if self.backward_impl is not None:
                 dOut = self.backward(dOut)
             if self._hid_inX is not None:
@@ -133,6 +133,9 @@ class BasicModule:
                         inArg._source._auto_backward()
 
             self.__zero_auto_backward_state()
+        else:
+            if self._hidden_links_count <= 0:
+                raise RuntimeError(f"You should make forward pass before auto-backward on {self.__class__.__name__}")
 
     @property
     def isTrainable(self):
