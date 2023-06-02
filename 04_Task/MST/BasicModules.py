@@ -138,7 +138,6 @@ class BasicModule:
     def isTrainable(self):
         return self._w is not None or self._bias is not None
     
-    
     def getModuleInfo(self, stringify = True):
         params = {"Trainable": self.isTrainable}
 
@@ -151,7 +150,6 @@ class BasicModule:
         return result_string
 
     def __stringify(self, module, result_string = None, depth=1):
-        #!TODO get module information from module
         if result_string is None:
             result_string = ""
 
@@ -172,7 +170,10 @@ class BasicModule:
                 else:
                     result_string += module.__class__.__name__ + ": "
             else:
-                result_string += moduleName + ": "
+                moduleType = module.__class__.__name__
+                if moduleType == 'dict':
+                    moduleType = "Sequential"
+                result_string += f"{moduleName} ({moduleType}): "
             
             # Достаем информацию о модуле
             if isinstance(module, BasicModule):
@@ -202,7 +203,6 @@ class Sequential(BasicModule):
     """
         Класс для создания блоков с линейным проходом по всем его внутренним блокам
     """
-
     def __init__(self, *args : list[BasicModule]):
         super().__init__()
         for id, module in enumerate(args):
