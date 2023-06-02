@@ -134,8 +134,21 @@ class BasicModule:
 
             self.__zero_auto_backward_state()
 
+    @property
     def isTrainable(self):
         return self._w is not None or self._bias is not None
+    
+    
+    def getModuleInfo(self, stringify = True):
+        params = {"Trainable": self.isTrainable}
+
+        if not stringify:
+            return tuple(params.values())
+        result_string = ""
+        for param_name, param_value in params.items():
+            if param_value is not None:
+                result_string += f"{param_name}({param_value}) "
+        return result_string
 
     def __stringify(self, module, result_string = None, depth=1):
         #!TODO get module information from module
@@ -163,7 +176,7 @@ class BasicModule:
             
             # Достаем информацию о модуле
             if isinstance(module, BasicModule):
-                result_string += f"Trainable({module.isTrainable()})"
+                result_string += module.getModuleInfo()
             else: # Если обьект не модуль, вызываем от него функцию рекурсивно
                 result_string += f"\n{self.__stringify(module, depth=depth+1)}"
             result_string += "\n"

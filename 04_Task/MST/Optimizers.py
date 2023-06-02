@@ -45,7 +45,7 @@ class SGD:
             if isinstance(sub_module, dict):
                 modules_d = self.__generate_modules_list(sub_module, modules_d)
             else:
-                if sub_module.isTrainable():
+                if sub_module.isTrainable:
                     modules_d.append(sub_module)
         return modules_d
 
