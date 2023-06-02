@@ -72,7 +72,7 @@ class CrossEntropyLoss(BasicModule):
         """
         if dOut is None:
             dLoss = (self._smOut - self._origin) / self._batch_size
-            self._inX.backward(dLoss)
+            return dLoss
         else:
             raise ValueError("TODO text for error")
         
@@ -90,7 +90,7 @@ class MAE(BasicModule):
     def backward_impl(self, dOut = None):
         if dOut is None:
             dLoss = np.sign(self._origin - self._inX) / self._batch_size
-            self._inX.backward(dLoss)
+            return dLoss
         else:
             raise ValueError("TODO text for error")
 
@@ -108,6 +108,6 @@ class MSE(BasicModule):
     def backward_impl(self, dOut = None):
         if dOut is None:
             dLoss = 2 * (self._origin - self._inX) / self._batch_size
-            self._inX.backward(dLoss)
+            return dLoss
         else:
             raise ValueError("TODO text for error")
