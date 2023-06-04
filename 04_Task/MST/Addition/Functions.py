@@ -3,7 +3,7 @@ import numpy as np
 def default_random_normal_dist__(size : tuple):
     return np.random.normal(loc=0, scale=1, size = size)
 
-# !TODO добавить параметр slope для разных типов активации (sigmoid/leakyRelu...)
+# !TODO добавить параметр slope для разных типов активации (sigmoid/leakyReLU...)
 def HE_weight_init__(size : tuple, dtype = np.float32):
     """
         Нулевое среднее

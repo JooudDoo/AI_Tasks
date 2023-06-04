@@ -1,3 +1,3 @@
 
-from .ReLu import Relu
+from .ReLu import ReLU
 from .Sigmoid import Sigmoid

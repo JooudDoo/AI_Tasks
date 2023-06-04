@@ -3,7 +3,7 @@ import numpy as np
 from MST import BasicModule
 from MST import MDT_REFACTOR_ARRAY
 
-class Relu(BasicModule):
+class ReLU(BasicModule):
     def __init__(self):
         super().__init__()
     

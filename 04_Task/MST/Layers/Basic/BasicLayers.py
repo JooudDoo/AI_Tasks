@@ -57,7 +57,7 @@ class ConvBasicModule(BasicModule):
         k = np.repeat(np.arange(C), kernel_h * kernel_w).reshape(-1, 1)
         return (i, j, k)
     
-    def _im2col(self, image):
+    def  _im2col(self, image):
         _, C, H, W = image.shape
 
         kernel_h, kernel_w = self._kernel_size

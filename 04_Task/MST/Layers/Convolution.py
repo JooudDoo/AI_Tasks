@@ -8,10 +8,10 @@ from .Basic import ConvBasicModule
 
 class Conv2d(ConvBasicModule):
 
-    def __init__(self, inC : int, outC : int, kernel_size, stride = 1, padding = 0, dilation = 1, use_bias = True, padding_value : float = 0):
+    def __init__(self, in_channels : int, out_channels : int, kernel_size, stride = 1, padding = 0, dilation = 1, use_bias = True, padding_value : float = 0):
         super().__init__(kernel_size, stride, padding, dilation, padding_value)
-        self._inC = inC
-        self._outC = outC
+        self._inC = in_channels
+        self._outC = out_channels
 
         self._use_bias = use_bias
 
@@ -27,7 +27,7 @@ class Conv2d(ConvBasicModule):
 
         self._inX = np.pad(x, [(0,0), (0,0), (self._padding[0], self._padding[0]), (self._padding[1], self._padding[1])], mode='constant', constant_values=self._padding_value)
 
-        self._inX_cols = self._im2col(self._inX) # .shape() = [C * K * K, BS * H * W]
+        self._inX_cols = self._im2col(self._inX) # .shape() = [C * K * K, BS * outH * outW]
         self._flatten_w = self._w.reshape(self._outC, -1) # .shape() = [outC, inC * K * K]
 
         self._outX = np.dot(self._flatten_w, self._inX_cols).reshape(self._outC, *self._output_size, BS)
@@ -38,12 +38,12 @@ class Conv2d(ConvBasicModule):
         return self._outX
     
     def backward_impl(self, dOut=None):
-        flatten_dOut = dOut.reshape(self._outC, -1)
+        flatten_dOut = dOut.reshape(self._outC, -1) # [outC, outH * outW * BS]
+        # self._inX_cols.T .shape = [BS * outH * outW, C * K * K]
+        self._dw = np.dot(flatten_dOut, self._inX_cols.T).reshape(self._w.shape) # outC, C * K * K
 
-        self._dw = np.dot(flatten_dOut, self._inX_cols.T).reshape(self._w.shape)
-
-        self._dinX = np.dot(self._flatten_w.T, flatten_dOut)
-        self._dinX = self._col2im(self._dinX, self._inX.shape)
+        self._dinX = np.dot(self._flatten_w.T, flatten_dOut) # [outC, K * K * C].T * [outC, outH * outW * BS] -> [K*K*C, outH * outW * BS]
+        self._dinX = self._col2im(self._dinX, self._inX.shape) # col2im -> [BS, inC, outH, outW]
 
         if self._use_bias:
             self._dbias = np.sum(dOut, axis=(0, 2, 3), keepdims=True)

@@ -6,7 +6,9 @@ from MST import MDT_REFACTOR_ARRAY, MDT_ARRAY
 from .Basic import ConvBasicModule
 
 class MaxPool2d(ConvBasicModule):
-    def __init__(self, kernel_size, stride = 1, padding = 0, dilation = 1, padding_value = 0):
+    def __init__(self, kernel_size, stride = None, padding = 0, dilation = 1, padding_value = 0):
+        if stride is None:
+            stride = kernel_size
         super().__init__(kernel_size, stride, padding, dilation, padding_value)
 
     def forward(self, x):
@@ -15,7 +17,7 @@ class MaxPool2d(ConvBasicModule):
         self._inX = x
         self._inX_padded = np.pad(x, [(0,0), (0,0), (self._padding[0], self._padding[0]), (self._padding[1], self._padding[1])], mode='constant', constant_values=self._padding_value)
         self._inX_cols = self._inX_padded.reshape(BS * C, 1, H+self._padding[0]*2, W+self._padding[1]*2)
-        self._inX_cols = self._im2col(self._inX_cols)  # .shape() = [C, K * K, BS * H * W]
+        self._inX_cols = self._im2col(self._inX_cols)  # .shape() = [C, K * K, BS * outH * outW]
 
         self._max_idx = np.argmax(self._inX_cols, axis=0) 
 

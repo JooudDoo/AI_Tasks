@@ -2,7 +2,7 @@
 import MST
 
 def relu(val : MST.MDT_REFACTOR_ARRAY) -> MST.MDT_REFACTOR_ARRAY:
-    return MST.Relu()(val)
+    return MST.ReLU()(val)
 
 def sigmoid(val : MST.MDT_REFACTOR_ARRAY) -> MST.MDT_REFACTOR_ARRAY:
     return MST.Sigmoid()(val)
