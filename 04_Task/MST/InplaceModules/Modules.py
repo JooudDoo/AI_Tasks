@@ -12,3 +12,6 @@ def flatten(val : MST.MDT_REFACTOR_ARRAY):
 
 def sum(x_1 : MST.MDT_REFACTOR_ARRAY, x_2 : MST.MDT_REFACTOR_ARRAY):
     return MST.Sum()(x_1, x_2)
+
+def softmax(val : MST.MDT_REFACTOR_ARRAY) -> MST.MDT_REFACTOR_ARRAY:
+    return MST.SoftMax()(val)

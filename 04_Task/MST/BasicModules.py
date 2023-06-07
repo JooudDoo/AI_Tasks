@@ -214,8 +214,11 @@ class Sequential(BasicModule):
             self.set_by_name(f"__seq_layer_{id}", module)
 
     def forward(self, x):
-        for module in self.get_modules().values():
-            x = module(x)
+        try:
+            for module in self.get_modules().values():
+                x = module(x)
+        except:
+            pass
         return x
     
     def __repr__(self):
