@@ -21,6 +21,16 @@ class Conv2d(ConvBasicModule):
         self._w = HE_weight_init__(size=(self._outC, self._inC, *self._kernel_size))
         self._bias = np.zeros(shape=(1, self._outC, 1, 1), dtype=np.float32) #HE_weight_init__(size=(1, self._outC, 1, 1)) if self._use_bias else 
     
+    """
+    
+        [inC, H, W] (x) [outC, inC, k, k] -> [outC, outH, outW]
+
+
+        [inC, H, W]       - > [inC *k*k, outH, outW] (*) [outC, inC * k * K] -> [outC, outH, outW]
+        [outC, inC, k, k] - > [outC, inC * k * K]
+    
+    """
+
     def forward(self, x):
         BS, C, H, W = x.shape
         self._output_size = self._calculate_output_sizes(H, W)
@@ -44,8 +54,9 @@ class Conv2d(ConvBasicModule):
 
         self._dinX = np.dot(self._flatten_w.T, flatten_dOut) # [outC, K * K * C].T * [outC, outH * outW * BS] -> [K*K*C, outH * outW * BS]
         self._dinX = self._col2im(self._dinX, self._inX.shape) # col2im -> [BS, inC, outH, outW]
+        self._dinX = self._remove_padding(self._dinX)
 
         if self._use_bias:
-            self._dbias = np.sum(dOut, axis=(0, 2, 3), keepdims=True)
+            self._dbias = np.sum(flatten_dOut, axis=(1)).reshape(self._bias.shape)
 
         return self._dinX

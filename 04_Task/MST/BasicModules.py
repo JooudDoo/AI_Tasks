@@ -37,7 +37,7 @@ class BasicModule:
         """
         if module is None:
             module = self
-        if module.get_modules is None:
+        if module.get_modules() is None:
             return None
         if modules_d is None:
             modules_d = {}
@@ -162,28 +162,29 @@ class BasicModule:
             _extract_plc = module
         else:
             raise RuntimeError(f"It is not possible to pull information from {module}")
+        if _extract_plc is not None:
 
-        for moduleName, module in _extract_plc.items():
-            result_string += '\t' * (depth-1) + ' └── '
+            for moduleName, module in _extract_plc.items():
+                result_string += '\t' * (depth-1) + ' └── '
 
-            # Достаем имя модуля
-            if "__seq_layer_" in moduleName:
-                if  module.__class__.__name__ == 'dict':
-                    result_string += "Sequential" + ": "
+                # Достаем имя модуля
+                if "__seq_layer_" in moduleName:
+                    if  module.__class__.__name__ == 'dict':
+                        result_string += "Sequential" + ": "
+                    else:
+                        result_string += module.__class__.__name__ + ": "
                 else:
-                    result_string += module.__class__.__name__ + ": "
-            else:
-                moduleType = module.__class__.__name__
-                if moduleType == 'dict':
-                    moduleType = "Sequential"
-                result_string += f"{moduleName} ({moduleType}): "
-            
-            # Достаем информацию о модуле
-            if isinstance(module, BasicModule):
-                result_string += module.getModuleInfo()
-            else: # Если обьект не модуль, вызываем от него функцию рекурсивно
-                result_string += f"\n{self.__stringify(module, depth=depth+1)}"
-            result_string += "\n"
+                    moduleType = module.__class__.__name__
+                    if moduleType == 'dict':
+                        moduleType = "Sequential"
+                    result_string += f"{moduleName} ({moduleType}): "
+                
+                # Достаем информацию о модуле
+                if isinstance(module, BasicModule):
+                    result_string += module.getModuleInfo()
+                else: # Если обьект не модуль, вызываем от него функцию рекурсивно
+                    result_string += f"\n{self.__stringify(module, depth=depth+1)}"
+                result_string += "\n"
 
         return result_string
 
@@ -200,7 +201,8 @@ class Flatten(BasicModule):
         return x.reshape(x.shape[0], -1)
     
     def backward_impl(self, dOut = None):
-        return dOut.reshape(self.__inshape)
+        self._dinX = dOut.reshape(self.__inshape)
+        return self._dinX
 
 class Sequential(BasicModule):
     """
@@ -215,3 +217,6 @@ class Sequential(BasicModule):
         for module in self.get_modules().values():
             x = module(x)
         return x
+    
+    def __repr__(self):
+        return str(self._modules)

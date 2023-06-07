@@ -5,6 +5,9 @@ from .MDT import MDT_REFACTOR_ARRAY
 
 from .Addition import softMax
 
+import torch.nn.functional as F
+import torch
+
 class CrossEntropyLoss(BasicModule):
     """
         Вычисляет CE loss для входных значений по origins
@@ -27,14 +30,13 @@ class CrossEntropyLoss(BasicModule):
             """
             self._origin = np.zeros_like(x)
             self._origin[np.arange(self._batch_size), origin] = 1
-
         """
             Применяем softMax чтобы привести входы к вектору вероятностей
             Добавляем очень маленькое число для стабильности
         """
-        self._smOut = softMax(x) + 1e-9
+        self._smOut = softMax(x) + 1e-12
 
-        self._outX = -np.sum(self._origin * np.log(self._smOut)) / self._batch_size
+        self._outX = -np.sum(np.log(self._smOut) * self._origin) / self._batch_size
         return self._outX
 
     def backward_impl(self, dOut = None):
@@ -71,8 +73,8 @@ class CrossEntropyLoss(BasicModule):
                     = -y + S(t)
         """
         if dOut is None:
-            dLoss = (self._smOut - self._origin) / self._batch_size
-            return dLoss
+            self._dinX = (self._smOut - self._origin) / self._batch_size
+            return self._dinX
         else:
             raise ValueError("TODO text for error")
         
@@ -89,8 +91,8 @@ class MAE(BasicModule):
 
     def backward_impl(self, dOut = None):
         if dOut is None:
-            dLoss = np.sign(self._origin - self._inX) / self._batch_size
-            return dLoss
+            self._dinX = np.sign(self._origin - self._inX) / self._batch_size
+            return self._dinX
         else:
             raise ValueError("TODO text for error")
 
@@ -107,7 +109,7 @@ class MSE(BasicModule):
 
     def backward_impl(self, dOut = None):
         if dOut is None:
-            dLoss = 2 * (self._origin - self._inX) / self._batch_size
-            return dLoss
+            self._dinX = 2 * (self._origin - self._inX) / self._batch_size
+            return self._dinX
         else:
             raise ValueError("TODO text for error")

@@ -10,10 +10,11 @@ class SGD:
         '_bias': '_dbias',
     }
 
-    def __init__(self, module : BasicModule , lr : float, momentum : float = 0):
+    def __init__(self, module : BasicModule , lr : float, momentum : float = 0, weight_decay : float = 0):
         self.modules : list[BasicModule] = self.__generate_modules_list(module)
         self.lr = lr
         self.momentum = momentum
+        self.weight_decay = weight_decay
         self.__create_modules_momentum_params()
 
     def __create_modules_momentum_params(self):
@@ -24,7 +25,7 @@ class SGD:
                 velocity_params = {}
                 for attribute, _ in self._target_attributes.items():
                     if module.get_by_name(attribute) is not None:
-                        velocity_params.update({attribute: np.zeros_like(module.get_by_name(attribute))})
+                        velocity_params.update({attribute: None})
                 self.modules[id] = (velocity_params, module)
 
     def __generate_modules_list(self, module, modules_d : list[BasicModule] = None):
@@ -54,12 +55,19 @@ class SGD:
             v_(t+1) = momentum * v_(t) + grad { w_(t) }
             w_(t+1) = w_(t) - lr *v_(t+1)
         """
+        if self.weight_decay:
+            params_grad = self.weight_decay * module.get_by_name(attribute) + module.get_by_name(self._target_attributes[attribute])
+        else:
+            params_grad = module.get_by_name(self._target_attributes[attribute])
         if params is not None:
-            params[attribute] = self.momentum * params[attribute] + module.get_by_name(self._target_attributes[attribute])
+            if params[attribute] is None:
+                params[attribute] = params_grad
+            else:
+                params[attribute] = self.momentum * params[attribute] + params_grad
             velocity = params[attribute]
         else:
-            velocity = module.get_by_name(self._target_attributes[attribute]) # Если моментум не используется то velocity = grad
-        return module.get_by_name(attribute) - self.lr * velocity
+            velocity = params_grad # Если моментум не используется то velocity = grad
+        return module.get_by_name(attribute) - self.lr * velocity 
 
     def step(self):
         for (params, module) in self.modules:
@@ -67,7 +75,7 @@ class SGD:
             for attribute, derivation in self._target_attributes.items():
                 if module.get_by_name(derivation) is not None:
                     new_w = self._apply_optimization(module, attribute, params)
-                    module.set_by_name(attribute, new_w)
+                    module.set_by_name(attribute, new_w.astype(np.float32))
                 else:
                     bad_params += 1
                     if bad_params == len(self._target_attributes.items()):

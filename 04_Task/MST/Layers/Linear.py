@@ -7,7 +7,7 @@ from MST.Addition import HE_weight_init__
 
 class Linear(BasicModule):
 
-    def __init__(self, in_size : int, out_size : int, use_bias = False):
+    def __init__(self, in_size : int, out_size : int, use_bias = True):
         super().__init__()
 
         self._inX = None

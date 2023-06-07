@@ -1,6 +1,6 @@
+import warnings
 
 import numpy as np
-import warnings
 
 from MST import BasicModule
 
@@ -38,6 +38,14 @@ class ConvBasicModule(BasicModule):
         outSize //= self._stride[dim]
         return outSize + 1
     
+    def _remove_padding(self, image):
+        padding_h, padding_w = self._padding
+        if padding_h > 0:
+            image = image[:, :, padding_h:-padding_h, :]
+        if padding_w > 0:
+            image = image[:, :, :, padding_w:-padding_w]
+        return image
+    
     def __im2col_indices_calc(self, image_shape):
         _, C, H, W = image_shape
         stride_h, stride_w = self._stride
@@ -57,7 +65,7 @@ class ConvBasicModule(BasicModule):
         k = np.repeat(np.arange(C), kernel_h * kernel_w).reshape(-1, 1)
         return (i, j, k)
     
-    def  _im2col(self, image):
+    def _im2col(self, image):
         _, C, H, W = image.shape
 
         kernel_h, kernel_w = self._kernel_size
@@ -70,8 +78,6 @@ class ConvBasicModule(BasicModule):
     
     def _col2im(self, cols, image_shape):
         BS, C, H, W = image_shape
-
-        padding_h, padding_w = self._padding
         kernel_h, kernel_w = self._kernel_size
 
         cols = cols.reshape(kernel_h * kernel_w * C, -1, BS)
@@ -83,9 +89,5 @@ class ConvBasicModule(BasicModule):
 
         np.add.at(image, (slice(None), k, i, j), cols)
 
-        if padding_h > 0:
-            image = image[:, :, padding_h:-padding_h, :]
-        if padding_w > 0:
-            image = image[:, :, :, padding_w:-padding_w]
-        
+
         return image

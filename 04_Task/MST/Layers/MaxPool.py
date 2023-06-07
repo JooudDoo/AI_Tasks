@@ -1,5 +1,6 @@
 
 import numpy as np
+from numba import njit
 
 from MST import MDT_REFACTOR_ARRAY, MDT_ARRAY
 
@@ -16,8 +17,9 @@ class MaxPool2d(ConvBasicModule):
         self._output_size = self._calculate_output_sizes(H, W)
         self._inX = x
         self._inX_padded = np.pad(x, [(0,0), (0,0), (self._padding[0], self._padding[0]), (self._padding[1], self._padding[1])], mode='constant', constant_values=self._padding_value)
+        
         self._inX_cols = self._inX_padded.reshape(BS * C, 1, H+self._padding[0]*2, W+self._padding[1]*2)
-        self._inX_cols = self._im2col(self._inX_cols)  # .shape() = [C, K * K, BS * outH * outW]
+        self._inX_cols = self._im2col(self._inX_cols)  # .shape() = [C * K * K, BS * outH * outW]
 
         self._max_idx = np.argmax(self._inX_cols, axis=0) 
 
@@ -27,14 +29,15 @@ class MaxPool2d(ConvBasicModule):
         self._outX = self._outX.transpose(2, 3, 0, 1)
 
         return self._outX
-    
+
     def backward_impl(self, dOut=None):
+        BS, C, H, W = self._inX.shape
         flatten_dOut = dOut.transpose(2, 3, 0, 1).ravel()
+        dinX_cols = np.zeros_like(self._inX_cols)
 
-        self._dinX = np.zeros_like(self._inX_cols)
-        self._dinX[self._max_idx, range(self._max_idx.size)] = flatten_dOut
+        dinX_cols[self._max_idx, range(self._max_idx.size)] = flatten_dOut
 
-        self._dinX = self._col2im(self._dinX, self._inX_padded.shape)
-        self._dinX.reshape(self._inX.shape)
+        self._dinX = self._col2im(dinX_cols, (BS*C, 1, H+self._padding[0]*2, W+self._padding[1]*2))
+        self._dinX = self._remove_padding(self._dinX).reshape(self._inX.shape)
 
-        return self._dinX
+        return self._dinX 
